@@ -8,7 +8,7 @@ nightlight = read.table('data/nightlight_buckets.csv', sep=',', header=TRUE, as.
 
 # Process nightlight intensity bucket data
 thresholds = as.character(lapply(
-  c(0.01, 0.0178, 0.0316, 0.0562, 
+  c(0, 0.01, 0.0178, 0.0316, 0.0562, 
   0.1, 0.178, 0.316, 0.562, 
   1, 1.78, 3.16, 5.62,
   10, 17.8, 31.6, 1000000),

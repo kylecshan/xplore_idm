@@ -66,7 +66,10 @@ for c in vacc_cols:
     r2 = [skl_r2(y[i], y_pred[i]) for i in (idx_train, idx_val, idx_test)]
 #    print('train/val/test r2 : %.3f / %.3f / %.3f' % tuple(r2))
 #    print('train/val/test mse: %.3f / %.3f / %.3f' % tuple(mse))
-    print(c + ', %.3f, %.3f, %.3f, %.3f' % (r2[0], mse[0], r2[2], mse[2]))
+#    print(c.ljust(12) + ', %.3f, %.3f | %.3f, %.3f | %.3f, %.3f' 
+#          % (r2[0], mse[0], r2[1], mse[1], r2[2], mse[2]))
+    print('%.3f' 
+          % r2[2])
     
 #
 #

@@ -28,15 +28,15 @@ vacc_cols = ('bcg', 'measles', 'dpt1', 'dpt2', 'dpt3',
              'health_card', 'any_vacc')
 output = ''
 for c in vacc_cols:
-    print(c.center(80, '-'))
+#    print(c.center(80, '-'))
     X = data.iloc[:, 13:].to_numpy()
     y = data[c].to_numpy()
     # Get rid of rows with no answers for this response
     X = X[~np.isnan(y)]
     y = y[~np.isnan(y)]
     n = X.shape[0]
-    n_train = round(n*.6)
-    n_val = round(n*.2)
+    n_train = round(n*.64)
+    n_val = round(n*.16)
     shuffle = np.random.choice(range(n), size=n, replace=False)
     idx_train = shuffle[:n_train]
     idx_val = shuffle[n_train:(n_train+n_val)]
@@ -44,7 +44,7 @@ for c in vacc_cols:
         
     param_choices = utils.product_dict(
             l1_ratio=[0, 0.3, 0.5, 0.7, 1],
-            alpha=np.geomspace(.0001, 10, num=6)
+            alpha=np.geomspace(.001, 100, num=6)
             )
     best_model = None
     best_r2 = -1
@@ -58,14 +58,15 @@ for c in vacc_cols:
         if r2 > best_r2:
             best_r2 = r2
             best_model = model
-            print('->', end='')
-        print(str(params) + ': %.3f' % r2)
+#            print('->', end='')
+#        print(str(params) + ': %.3f' % r2)
     
     y_pred = best_model.predict(X)
     mse = [np.power(y[i]-y_pred[i], 2).mean() for i in (idx_train, idx_val, idx_test)]
     r2 = [skl_r2(y[i], y_pred[i]) for i in (idx_train, idx_val, idx_test)]
-    print('train/val/test r2 : %.3f / %.3f / %.3f' % tuple(r2))
-    print('train/val/test mse: %.3f / %.3f / %.3f' % tuple(mse))
+#    print('train/val/test r2 : %.3f / %.3f / %.3f' % tuple(r2))
+#    print('train/val/test mse: %.3f / %.3f / %.3f' % tuple(mse))
+    print(c + ', %.3f, %.3f, %.3f, %.3f' % (r2[0], mse[0], r2[2], mse[2]))
     
 #
 #
