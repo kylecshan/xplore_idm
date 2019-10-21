@@ -8,11 +8,15 @@ Created on Wed Oct  9 15:14:02 2019
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
+from sklearn.linear_model import Ridge
 from sklearn.metrics import r2_score as skl_r2
+from sklearn.model_selection import KFold
 import utils
 
+mode = 'gbm'
+
 dhs = pd.read_csv('data/dhs_gps.csv', header=0, index_col=0)
-nightlight = pd.read_csv('data/nightlight_buckets_parsed.csv', 
+nightlight = pd.read_csv('data/nightlight_buckets.csv', 
                          header=0, index_col=0)
 #nightlight.set_index('cluster_id', drop=True, inplace=True)
 
@@ -30,31 +34,41 @@ for c in vacc_cols:
     X = X[~np.isnan(y)]
     y = y[~np.isnan(y)]
     n = X.shape[0]
-    n_train = round(n*.64)
-    n_val = round(n*.16)
+    n_train = round(n*.8)
     shuffle = np.random.choice(range(n), size=n, replace=False)
     idx_train = shuffle[:n_train]
-    idx_val = shuffle[n_train:(n_train+n_val)]
-    idx_test = shuffle[(n_train+n_val):]
+    idx_test = shuffle[n_train:]
         
-    param_choices = utils.product_dict(
-            objective=['regression'],
-            num_leaves=(3, 5, 7),
-            min_data_in_leaf=(5, 10, 15, 20),
-            bagging_fraction=(.2, .5, .8),
-            bagging_freq=[1]
-            )
+    if mode == 'gbm':
+        param_choices = utils.product_dict(
+                objective=['regression'],
+                num_leaves=(5, 7, 10),
+                min_data_in_leaf=(5, 10, 15, 20)
+                )
+    elif mode == 'linear':
+        param_choices = utils.product_dict(
+        alpha=np.geomspace(.001, 100, num=6)
+        )
     best_params = None
-    best_r2 = -1
+    best_mse = 999999999
     for params in param_choices:
-        lgb_data = lgb.Dataset(data=X[idx_train], label=y[idx_train])
-        gbm = lgb.train(params, lgb_data, 100)
-        
-        pred = gbm.predict(X[idx_val])
-        r2 = skl_r2(y[idx_val], pred)
-        
-        if r2 > best_r2:
-            best_r2 = r2
+        # Create CV folds
+        n_fold = 10
+        kf = KFold(n_splits = n_fold)
+        pred = np.full_like(y[idx_train], np.nan)
+        for train_folds, test_folds in kf.split(X[idx_train]):
+            if mode == 'gbm':
+                lgb_data = lgb.Dataset(data=X[train_folds], label=y[train_folds])
+                gbm = lgb.train(params, lgb_data, 100)
+                fold_pred = gbm.predict(X[test_folds])
+            elif mode == 'linear':
+                model = Ridge(**params, max_iter=1000)
+                model.fit(X[train_folds], y[train_folds])
+                fold_pred = model.predict(X[test_folds])
+            pred[test_folds] = fold_pred
+        avg_mse = np.power(y[idx_train]-pred, 2).mean()
+        if avg_mse < best_mse:
+            best_mse = avg_mse
             best_params = params
 #            print('->', end='')
 #        print(str(params) + ': %.3f' % r2)
@@ -62,14 +76,13 @@ for c in vacc_cols:
     lgb_data = lgb.Dataset(data=X[idx_train], label=y[idx_train])
     best_gbm = lgb.train(best_params, lgb_data, 100)
     y_pred = best_gbm.predict(X)
-    mse = [np.power(y[i]-y_pred[i], 2).mean() for i in (idx_train, idx_val, idx_test)]
-    r2 = [skl_r2(y[i], y_pred[i]) for i in (idx_train, idx_val, idx_test)]
+    mse = [np.power(y[i]-y_pred[i], 2).mean() for i in (idx_train, idx_test)]
+    r2 = [skl_r2(y[i], y_pred[i]) for i in (idx_train, idx_test)]
 #    print('train/val/test r2 : %.3f / %.3f / %.3f' % tuple(r2))
 #    print('train/val/test mse: %.3f / %.3f / %.3f' % tuple(mse))
-#    print(c.ljust(12) + ', %.3f, %.3f | %.3f, %.3f | %.3f, %.3f' 
-#          % (r2[0], mse[0], r2[1], mse[1], r2[2], mse[2]))
-    print('%.3f' 
-          % r2[2])
+    print(c.ljust(12) + ', %.3f, %.3f , %.3f, %.3f' 
+          % (r2[0], mse[0], r2[1], mse[1]))
+#    print('%.3f'  % r2[2])
     
 #
 #
