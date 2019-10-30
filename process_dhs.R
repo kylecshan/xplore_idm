@@ -4,13 +4,13 @@ library(dplyr)
 setwd('D:/xplore_idm/')
 
 ## Load DHS children's vaccination data and take out the columns of interest
-# vacc_data <- read.dta('data/NGKR6ADT/NGKR6AFL.DTA', convert.factors=FALSE)
-# vacc_cols <- c('v001', 'h2','h9','h3','h5','h7','h0','h4','h6','h8', 'h1', 'h10')
-# vacc_data <- vacc_data[, vacc_cols]
-# new_colnames <- c('cluster_id', 'bcg', 'measles', 'dpt1', 'dpt2', 'dpt3', 
-#                'polio0', 'polio1', 'polio2', 'polio3', 
-#                'health_card', 'any_vacc')
-# colnames(vacc_data) <- new_colnames
+vacc_data <- read.dta('data/NGKR6ADT/NGKR6AFL.DTA', convert.factors=FALSE)
+vacc_cols <- c('v001', 'h2','h9','h3','h5','h7','h0','h4','h6','h8', 'h1', 'h10')
+vacc_data <- vacc_data[, vacc_cols]
+new_colnames <- c('cluster_id', 'bcg', 'measles', 'dpt1', 'dpt2', 'dpt3',
+               'polio0', 'polio1', 'polio2', 'polio3',
+               'health_card', 'any_vacc')
+colnames(vacc_data) <- new_colnames
 # write.table(vacc_data, 'data/dhs_raw.csv')
 
 ## Process survey response codes and summarize by region
