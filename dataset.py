@@ -1,5 +1,6 @@
 import torch
 import torchvision.datasets as datasets
+import torchvision.transforms as transforms
 import torch.nn as nn
 import numpy as np
 import pandas as pd
@@ -30,13 +31,27 @@ def random_rot_flip(x):
 
 # A dataset which simply loads the .tif files
 class FullImageDataset(torch.utils.data.Dataset):
-    def __init__(self, folder):
+    def __init__(self, folder, normalize=True):
         self.folder = folder
         self.data_files = os.listdir(folder)
         self.data_files.sort()
+        if normalize:
+            means = torch.Tensor([10.4416, 15.2296, 26.3324, 
+                                  30.9281, 73.2675, 70.4694, 
+                                  49.4693, 70.2683, 62.4014])
+            stds = torch.Tensor([6.0010,  7.3479, 10.5185,
+                                 17.6855, 16.4320, 28.8515,
+                                 27.2334,  8.5265, 8.6082])
+            self.norm = transforms.Normalize(means, stds)
+        else:
+            self.norm = None
 
     def __getitem__(self, idx):
-        return load_file(self.folder, self.data_files[idx])
+        output = load_file(self.folder, self.data_files[idx])
+        if self.norm is not None:
+            output[:9, :, :] = self.norm(output[:9, :, :])
+        output[torch.isnan(output)] = 0
+        return output
 
     def __len__(self):
         return len(self.data_files)
@@ -44,8 +59,8 @@ class FullImageDataset(torch.utils.data.Dataset):
 # This dataset center-crops the 25km square images to
 # 10km square images (K = 333).
 class TestDataset(FullImageDataset):
-    def __init__(self, folder, K=333):
-        super(TestDataset, self).__init__(folder)
+    def __init__(self, folder, K=333, normalize=True):
+        super(TestDataset, self).__init__(folder, normalize=normalize)
         self.K = K
         
     def __getitem__(self, idx):
