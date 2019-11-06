@@ -13,15 +13,16 @@ import torch.optim as optim
 import numpy as np
 import os
 
-from dataset import TrainDataset
+from dataset import TrainDataset, TestDataset
 from model import initialize_model
 
 if __name__ == '__main__':
     # In[2]:
 
 
-    DATA_FOLDER = 'E:/xplore_data/data/'
     CHECKPOINT_FOLDER = 'checkpoints/'
+    DATA_FILE = 'E:/xplore_data/data/images.h5'
+    DHSGPS_FILE = 'data/dhs_gps.csv'
 
 
     # In[3]:
@@ -41,7 +42,7 @@ if __name__ == '__main__':
     # In[5]:
 
 
-    dtrain = TrainDataset(DATA_FOLDER, INPUT_SIZE)
+    dtrain = TrainDataset(h5_file=DATA_FILE, dhsgps_file=DHSGPS_FILE, K=INPUT_SIZE)
 
 
     # In[6]:
@@ -56,12 +57,13 @@ if __name__ == '__main__':
             running_loss = 0.0
             running_corrects = 0
 
-            criterion = nn.CrossEntropyLoss()
+            criterion = nn.CrossEntropyLoss(reduction='none')
 
             # Iterate over data.
-            for x, y in dataloader:
+            for x, y, stats in dataloader:
                 x = x.to(device)
                 y = y.to(device)
+                stats = stats.to(device)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -71,10 +73,12 @@ if __name__ == '__main__':
                 with torch.set_grad_enabled(True):
                     outputs = model(x)
                     _, preds = torch.max(outputs, 1)
-                    loss = criterion(outputs, y)
+                    loss = criterion(outputs, y) * stats[:, 3:14].mean(axis=1)
+                    loss = loss.mean()
                     loss.backward()
                     optimizer.step()
                     scheduler.step()
+
 
                 # statistics
                 running_loss += loss.item() * x.size(0)
@@ -100,12 +104,12 @@ if __name__ == '__main__':
 
     BATCH_SIZE = 32
     EPOCHS_PER = 10
-    ROUNDS = 10
+    ROUNDS = 5
 
     # Data loader
     dloader = torch.utils.data.DataLoader(dtrain, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
     # Create training optimizer
-    optimizer = optim.Adam(net.parameters(), lr=0.01, weight_decay=0.001)
+    optimizer = optim.Adam(net.parameters(), lr=0.002, weight_decay=0.001)
     # Optimizer LR decay
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
@@ -119,7 +123,7 @@ if __name__ == '__main__':
         # In[ ]:
 
 
-        checkpoint_name = 'mobilenet_3_' + str(r)
+        checkpoint_name = 'mobilenet_6_' + str(r)
         torch.save(net.state_dict(), os.path.join(CHECKPOINT_FOLDER, checkpoint_name))
 
 
