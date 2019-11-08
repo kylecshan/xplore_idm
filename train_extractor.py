@@ -14,7 +14,7 @@ import numpy as np
 import os
 
 from dataset import TrainDataset, TestDataset
-from model import initialize_model
+from model import *
 
 if __name__ == '__main__':
     # In[2]:
@@ -64,6 +64,8 @@ if __name__ == '__main__':
                 x = x.to(device)
                 y = y.to(device)
                 stats = stats.to(device)
+                wt = stats[:, 3:14].mean(axis=1)
+                wt = wt / wt.sum()
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -73,8 +75,8 @@ if __name__ == '__main__':
                 with torch.set_grad_enabled(True):
                     outputs = model(x)
                     _, preds = torch.max(outputs, 1)
-                    loss = criterion(outputs, y) * stats[:, 3:14].mean(axis=1)
-                    loss = loss.mean()
+                    loss = criterion(outputs, y) * wt
+                    loss = loss.sum()
                     loss.backward()
                     optimizer.step()
                     scheduler.step()
@@ -95,8 +97,11 @@ if __name__ == '__main__':
     # In[7]:
 
 
-    net = initialize_model()
+    net = initialize_model2(100)
     net.to(device)
+    
+#     SAVED_MODEL_PATH = 'checkpoints/mobilenet_6_0'
+#     net.load_state_dict(torch.load(SAVED_MODEL_PATH))
 
 
     # In[8]:
@@ -105,13 +110,17 @@ if __name__ == '__main__':
     BATCH_SIZE = 32
     EPOCHS_PER = 10
     ROUNDS = 5
+    
+    LR = 0.0001
+    WT_DECAY = 0.0001
 
     # Data loader
     dloader = torch.utils.data.DataLoader(dtrain, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
     # Create training optimizer
-    optimizer = optim.Adam(net.parameters(), lr=0.002, weight_decay=0.001)
+    optimizer = optim.Adam(net.parameters(), lr=LR, weight_decay=WT_DECAY)
     # Optimizer LR decay
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.7)
+    print('LR = %f, wt decay = %f, n_features = %d' % (LR, WT_DECAY, net.n_features))
 
 
     # In[ ]:
@@ -123,7 +132,7 @@ if __name__ == '__main__':
         # In[ ]:
 
 
-        checkpoint_name = 'mobilenet_6_' + str(r)
+        checkpoint_name = 'vgg11bn_2_' + str(r)
         torch.save(net.state_dict(), os.path.join(CHECKPOINT_FOLDER, checkpoint_name))
 
 

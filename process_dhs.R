@@ -1,5 +1,6 @@
 library(foreign)
 library(dplyr)
+library(tidyr)
 
 setwd('D:/xplore_idm/')
 
@@ -19,7 +20,10 @@ for (c in colnames(vacc_data)[2:12]) {
   # We're counting 8 (don't know) and 9 (missing) as NA
   vacc_data[, c] <- recode(vacc_data[, c], `0`=0, `1`=1, `2`=1, `3`=1, .default=as.double(NA))
 }
-vacc_summary <- vacc_data %>% group_by(cluster_id) %>% summarise_all(funs(mean(., na.rm=TRUE)))
+vacc_summary <- vacc_data %>% 
+  group_by(cluster_id) %>% 
+  summarise_all(list(~sum(!is.na(.)), ~mean(., na.rm=TRUE))) %>%
+  replace_na(list(any_vacc_mean = 0))
 
 ## Read location data
 gps_data <- read.dbf('data/NGGE6AFL/NGGE6AFL.DBF')
@@ -32,7 +36,7 @@ gps_data = gps_data[gps_data$latitude != 0 & gps_data$longitude != 0, ]
 gps_data <- tbl_df(gps_data)
 
 ## Combine with vaccination data
-data <- vacc_summary %>% inner_join(gps_data, by='cluster_id')
+data <- gps_data %>% inner_join(vacc_summary, by='cluster_id')
 write.table(data, 'data/dhs_gps.csv', sep=',', row.names=FALSE)
 
 ## Export just the cluster locations
