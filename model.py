@@ -32,7 +32,7 @@ def initialize_model2(n_features=100):
         nn.Linear(in_features=512, out_features=3, bias=True)
     )
     
-    net.n_features = n_features
+    net.n_features = 512
     return net
 
 def initialize_model3(n_features=100):
@@ -48,5 +48,5 @@ def initialize_model3(n_features=100):
         nn.Linear(in_features=2048, out_features=3, bias=True)
     )
     
-    net.n_features = n_features
+    net.n_features = 2048
     return net

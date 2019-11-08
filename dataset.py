@@ -5,7 +5,7 @@ import torch.nn as nn
 import numpy as np
 import pandas as pd
 import os
-import h5py
+import h5pickle as h5py
 from osgeo import gdal
 
 def load_file(folder, file):
