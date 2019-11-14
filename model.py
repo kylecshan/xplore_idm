@@ -36,17 +36,33 @@ def initialize_model2(n_features=100):
     return net
 
 def initialize_model3(n_features=100):
-    net = models.resnet50()
+    net = models.vgg13_bn()
 
     # Replace first layer to use 9 channels instead of 3
-    net.conv1 = nn.Conv2d(9, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+    net.features[0] = nn.Conv2d(9, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    
+    net.avgpool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+    # Replace classifier to predict low/med/high night light intensity
+    net.classifier = nn.Sequential(
+#         nn.Dropout(p=0.2, inplace=False),
+        nn.Linear(in_features=512, out_features=3, bias=True)
+    )
+    
+    net.n_features = 512
+    return net
+
+def initialize_model4(n_features=100):
+    net = models.densenet121()
+
+    # Replace first layer to use 9 channels instead of 3
+    net.features.conv0 = nn.Conv2d(9, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
     
 #     net.avgpool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
     # Replace classifier to predict low/med/high night light intensity
-    net.fc = nn.Sequential(
+    net.classifier = nn.Sequential(
 #         nn.Dropout(p=0.2, inplace=False),
-        nn.Linear(in_features=2048, out_features=3, bias=True)
+        nn.Linear(in_features=1024, out_features=3, bias=True)
     )
     
-    net.n_features = 2048
+    net.n_features = 1024
     return net

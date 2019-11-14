@@ -31,9 +31,9 @@ def train_model(model, dataloader, optimizer, scheduler, num_epochs=4, device=No
         for x, y, stats in dataloader:
             x = x.to(device)
             y = y.to(device)
-            stats = stats.to(device)
             wt = stats[:, 3:14].mean(axis=1)
             wt = wt / wt.sum()
+            wt = wt.to(device)
 
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -49,10 +49,12 @@ def train_model(model, dataloader, optimizer, scheduler, num_epochs=4, device=No
                 optimizer.step()
                 scheduler.step()
 
-
             # statistics
-            running_loss += loss.item() * x.size(0)
-            running_corrects += torch.sum(preds == y.data)
+            with torch.no_grad():
+                running_loss += loss.item() * x.size(0)
+                running_corrects += torch.sum(preds == y.data)
+            
+            del loss
 
         epoch_loss = running_loss / n
         epoch_acc = running_corrects.double() / n
@@ -85,11 +87,11 @@ def main():
 
     # Training parameters
     BATCH_SIZE = 32
-    EPOCHS_PER = 10
+    EPOCHS_PER = 20
     ROUNDS = 5
     
     LR = 0.0001
-    WT_DECAY = 0.00001
+    WT_DECAY = 0.00005
 
     # Data loader
     dloader = torch.utils.data.DataLoader(dtrain, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
