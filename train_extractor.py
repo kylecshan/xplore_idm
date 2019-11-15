@@ -31,9 +31,9 @@ def train_model(model, dataloader, optimizer, scheduler, num_epochs=4, device=No
         for x, y, stats in dataloader:
             x = x.to(device)
             y = y.to(device)
-            wt = stats[:, 3:14].mean(axis=1)
-            wt = wt / wt.sum()
-            wt = wt.to(device)
+#             wt = stats[:, 3:14].mean(axis=1)
+#             wt = wt / wt.sum()
+#             wt = wt.to(device)
 
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -43,7 +43,8 @@ def train_model(model, dataloader, optimizer, scheduler, num_epochs=4, device=No
             with torch.set_grad_enabled(True):
                 outputs = model(x)
                 _, preds = torch.max(outputs, 1)
-                loss = criterion(outputs, y) * wt
+#                 loss = criterion(outputs, y) * wt
+                loss = criterion(outputs, y)
                 loss = loss.sum()
                 loss.backward()
                 optimizer.step()
@@ -81,17 +82,14 @@ def main():
     ##########################
     net = initialize_model2()
     net.to(device)
-    
-#     SAVED_MODEL_PATH = 'checkpoints/mobilenet_6_0'
-#     net.load_state_dict(torch.load(SAVED_MODEL_PATH))
 
     # Training parameters
     BATCH_SIZE = 32
-    EPOCHS_PER = 20
+    EPOCHS_PER = 10
     ROUNDS = 5
     
     LR = 0.0001
-    WT_DECAY = 0.00005
+    WT_DECAY = 0.0001
 
     # Data loader
     dloader = torch.utils.data.DataLoader(dtrain, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
@@ -104,7 +102,7 @@ def main():
     # Train model and save checkpoints
     for r in range(ROUNDS):
         net = train_model(net, dloader, optimizer, scheduler, EPOCHS_PER, device=device)
-        checkpoint_name = 'vgg11bn_3_' + str(r)
+        checkpoint_name = 'vgg11bn_4_' + str(r)
         torch.save(net.state_dict(), os.path.join(CHECKPOINT_FOLDER, checkpoint_name))
 
     return 0
