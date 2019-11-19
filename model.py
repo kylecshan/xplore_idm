@@ -26,6 +26,7 @@ def initialize_model2(n_features=100):
     net.features[0] = nn.Conv2d(9, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
     
     net.avgpool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+#     net.avgpool = nn.AdaptiveMaxPool2d(output_size=(1, 1))
     # Replace classifier to predict low/med/high night light intensity
     net.classifier = nn.Sequential(
 #         nn.Dropout(p=0.2, inplace=False),

@@ -88,8 +88,8 @@ def main():
     EPOCHS_PER = 10
     ROUNDS = 5
     
-    LR = 1e-5
-    WT_DECAY = 1e-5
+    LR = 1e-4
+    WT_DECAY = 1e-4
 
     # Data loader
     dloader = torch.utils.data.DataLoader(dtrain, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
@@ -102,7 +102,7 @@ def main():
     # Train model and save checkpoints
     for r in range(ROUNDS):
         net = train_model(net, dloader, optimizer, scheduler, EPOCHS_PER, device=device)
-        checkpoint_name = 'vgg11bn_4_' + str(r)
+        checkpoint_name = 'vgg11bn_5_' + str(r)
         torch.save(net.state_dict(), os.path.join(CHECKPOINT_FOLDER, checkpoint_name))
 
     return 0
