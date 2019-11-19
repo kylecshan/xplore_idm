@@ -88,8 +88,8 @@ def main():
     EPOCHS_PER = 10
     ROUNDS = 5
     
-    LR = 0.0001
-    WT_DECAY = 0.0001
+    LR = 1e-5
+    WT_DECAY = 1e-5
 
     # Data loader
     dloader = torch.utils.data.DataLoader(dtrain, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
