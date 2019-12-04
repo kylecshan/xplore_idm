@@ -122,6 +122,22 @@ class TestDataset(FullImageDataset):
         light = ((light > 4).long() + (light > 16).long()).median()
         return landsat, light, vacc_stats
     
+    
+# Same as above but doesn't take the median of the light intensities
+class TestDataset2(FullImageDataset):
+    def __init__(self, h5_file, dhsgps_file, K=333, normalize=True):
+        super(TestDataset2, self).__init__(h5_file, dhsgps_file, normalize=normalize)
+        self.K = K
+        
+    def __getitem__(self, idx):
+        full, vacc_stats = super(TestDataset2, self).__getitem__(idx)
+        hstart = (full.shape[1]-self.K)//2
+        wstart = (full.shape[2]-self.K)//2
+        output = full[:, hstart:(hstart+self.K), wstart:wstart+self.K]
+        landsat, light = split_image(output)
+        light = ((light > 4).long() + (light > 16).long())
+        return landsat, light, vacc_stats
+    
 # # This dataset extends TestDataset to also include healthcare
 # # outcomes.
 # class HealthcareDataset(TestDataset):
